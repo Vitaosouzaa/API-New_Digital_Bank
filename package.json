@@ -1,0 +1,29 @@
+{
+  "name": "api-bancook",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "rimraf ./build && tsc",
+    "start": "node build/index.js",
+    "start:watch": "tsx watch --env-file=.env src/index.ts",
+    "dev": "ts-node-dev src/index.ts",
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
+    "ts-node-dev": "^2.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

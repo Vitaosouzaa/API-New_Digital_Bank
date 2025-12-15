@@ -1,4 +1,6 @@
+import { EntityManager } from "typeorm";
 import { db } from "../services/UserService";
+import { User } from "../entities/User";
 
 export const deleteOneUser = (id: number) => {
   const index = db.findIndex((user) => user.id === id);
@@ -8,3 +10,15 @@ export const deleteOneUser = (id: number) => {
   }
   return false;
 };
+
+export class UserRepository {
+  private manager: EntityManager;
+
+  constructor(manager: EntityManager) {
+    this.manager = manager;
+  }
+
+  createUser = async (user: User) => {
+    return this.manager.save(user);
+  };
+}

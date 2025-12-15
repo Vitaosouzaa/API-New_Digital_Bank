@@ -1,11 +1,6 @@
+import { IUser } from "../interfaces/IUser";
 import { deleteOneUser } from "../repositories/user-repositories";
 import * as HttpResponse from "../utils/http-helper";
-
-export interface IUser {
-  id: number;
-  name: string;
-  email: string;
-}
 
 export const db = [
   {
@@ -29,7 +24,7 @@ export class UserService {
       email,
     };
     this.db.push(user);
-    console.log("DB atualizado", this.db);
+    return this.db;
   };
 
   getAllUsers = () => {

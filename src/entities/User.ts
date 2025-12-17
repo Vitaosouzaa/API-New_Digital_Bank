@@ -1,9 +1,9 @@
-import { Column, Entity, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, PrimaryColumn } from "typeorm";
 import { randomUUID } from "crypto";
 
 @Entity("users")
 export class User {
-  @PrimaryGeneratedColumn()
+  @PrimaryColumn("text")
   user_id: string;
 
   @Column({ nullable: false })

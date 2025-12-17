@@ -1,15 +1,5 @@
 import { EntityManager } from "typeorm";
-import { db } from "../services/UserService";
 import { User } from "../entities/User";
-
-export const deleteOneUser = (id: number) => {
-  const index = db.findIndex((user) => user.id === id);
-  if (index !== -1) {
-    db.splice(index, 1);
-    return true;
-  }
-  return false;
-};
 
 export class UserRepository {
   private manager: EntityManager;
@@ -18,7 +8,32 @@ export class UserRepository {
     this.manager = manager;
   }
 
-  createUser = async (user: User) => {
+  createUser = async (user: User): Promise<User> => {
     return this.manager.save(user);
+  };
+
+  getUser = async (userId: string): Promise<User | null> => {
+    return this.manager.findOne(User, {
+      where: {
+        user_id: userId,
+      },
+    });
+  };
+
+  getUserByEmailAndPassword = async (
+    email: string,
+    password: string
+  ): Promise<User | null> => {
+    return this.manager.findOne(User, {
+      where: {
+        email,
+        password,
+      },
+    });
+  };
+
+  deleteUser = async (userId: string): Promise<boolean> => {
+    const result = await this.manager.delete(User, { user_id: userId });
+    return result.affected ? result.affected > 0 : false;
   };
 }

@@ -7,24 +7,24 @@ export class User1765799286480 implements MigrationInterface {
         name: "users",
         columns: [
           {
-            name: "id_user",
-            type: "string",
+            name: "user_id",
+            type: "text",
             isPrimary: true,
           },
           {
             name: "name",
-            type: "string",
+            type: "text",
             isNullable: false,
           },
           {
             name: "email",
-            type: "string",
+            type: "text",
             isNullable: false,
             isUnique: true,
           },
           {
             name: "password",
-            type: "string",
+            type: "text",
             isNullable: false,
           },
         ],

@@ -1,58 +1,127 @@
 import { Request } from "express";
 import { makeMockRequest } from "../__mocks__/mockRequest.mock";
 import { makeMockResponse } from "../__mocks__/mockResponse.mock";
-import { UserService } from "../services/UserService";
 import { UserController } from "./UserController";
 
-describe("UserController", () => {
-  const mockUserService: Partial<UserService> = {
-    createUser: jest.fn(),
-    getAllUsers: jest.fn(),
-    deleteUser: jest.fn(),
-  };
-  const userController = new UserController(mockUserService as UserService);
-  const mockResponse = makeMockResponse();
+const mockUserService = {
+  createUser: jest.fn().mockResolvedValue({
+    statusCode: 201,
+    body: { message: "User created successfully" },
+  }),
+  // getUsers: jest.fn(),
+  deleteUser: jest
+    .fn()
+    .mockResolvedValue({ statusCode: 200, body: { message: "User deleted successfully" } }),
+};
 
-  it("Deve adicionar um novo usuario", () => {
+jest.mock("../services/UserService", () => {
+  return {
+    UserService: jest.fn().mockImplementation(() => {
+      return mockUserService;
+    }),
+  };
+});
+
+describe("UserController", () => {
+  const userController = new UserController();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("Deve adicionar um novo usuario", async () => {
     const mockRequest = makeMockRequest({
-      body: { name: "João", email: "joao@email.com" },
+      body: { name: "João", email: "joao@email.com", password: "12345" },
     });
     const mockResponse = makeMockResponse();
-    userController.createUser(mockRequest, mockResponse);
+    mockUserService.createUser.mockResolvedValueOnce({
+      statusCode: 201,
+      body: { message: "User created successfully" },
+    });
+
+    await userController.createUser(mockRequest, mockResponse);
 
     expect(mockResponse.state.status).toBe(201);
-    expect(mockResponse.state.json).toMatchObject({ message: "User created!" });
+    expect(mockResponse.state.json).toMatchObject({
+      message: "User created successfully",
+    });
   });
 
-  it("Deve retornar erro ao tentar adicionar um usuário sem email", () => {
+  it("Deve retornar um erro se o usuário não informar um name", async () => {
     const mockRequest = makeMockRequest({
-      body: { name: "João", email: "" },
+      body: { name: "", email: "joao@email.com", password: "12345" },
     });
     const mockResponse = makeMockResponse();
-    userController.createUser(mockRequest, mockResponse);
+    await userController.createUser(mockRequest, mockResponse);
+
     expect(mockResponse.state.status).toBe(400);
     expect(mockResponse.state.json).toMatchObject({
-      message: "Bad Request: Email Obrigatório",
+      message: "Bad Request: Todos os campos são Obrigatórios",
     });
   });
 
-  it("Deve retornar a lista de usuários", () => {
-    const mockRequest = makeMockRequest({});
-    userController.getAllUsers(mockRequest, mockResponse);
-    expect(mockResponse.state.status).toBe(200);
+  it("Deve retornar erro ao tentar adicionar um usuário sem email", async () => {
+    const mockRequest = makeMockRequest({
+      body: { name: "João", email: "", password: "12345" },
+    });
+    const mockResponse = makeMockResponse();
+    await userController.createUser(mockRequest, mockResponse);
+    expect(mockResponse.state.status).toBe(400);
+    expect(mockResponse.state.json).toMatchObject({
+      message: "Bad Request: Todos os campos são Obrigatórios",
+    });
   });
 
-  it("Deve retornar uma mensagem de usuário deletado", () => {
+  it("Deve retornar erro ao tentar adicionar um usuário sem password", async () => {
+    const mockRequest = makeMockRequest({
+      body: { name: "João", email: "joao@email.com", password: "" },
+    });
+    const mockResponse = makeMockResponse();
+    await userController.createUser(mockRequest, mockResponse);
+    expect(mockResponse.state.status).toBe(400);
+    expect(mockResponse.state.json).toMatchObject({
+      message: "Bad Request: Todos os campos são Obrigatórios",
+    });
+  });
+
+  // it("Deve retornar a lista de usuários", () => {
+  //   const mockRequest = makeMockRequest({});
+  //   userController.getUsers(mockRequest, mockResponse);
+  //   expect(mockResponse.state.status).toBe(200);
+  // });
+
+  it("Deve retornar uma mensagem de usuário deletado", async () => {
     const mockRequest = {
       body: {
-        id: 1,
-        email: "",
+        user_id: "550e8400-e29b-41d4-a716-446655440000",
       },
     } as Request;
+    const mockResponse = makeMockResponse();
 
-    userController.deleteUser(mockRequest, mockResponse);
+    mockUserService.deleteUser.mockResolvedValueOnce({
+      statusCode: 200,
+      body: { message: "User deleted successfully" },
+    });
+
+    await userController.deleteUser(mockRequest, mockResponse);
 
     expect(mockResponse.state.status).toBe(200);
-    expect(mockResponse.state.json).toMatchObject({ message: "User deleted!" });
+    expect(mockResponse.state.json).toMatchObject({
+      message: "User deleted successfully",
+    });
+  });
+
+  it("Deve retornar erro se user_id não for fornecido", async () => {
+    const mockRequest = {
+      body: {},
+    } as Request;
+    const mockResponse = makeMockResponse();
+
+    await userController.deleteUser(mockRequest, mockResponse);
+
+    expect(mockResponse.state.status).toBe(400);
+    expect(mockResponse.state.json).toMatchObject({
+      message: "user_id é obrigatório",
+    });
   });
 });

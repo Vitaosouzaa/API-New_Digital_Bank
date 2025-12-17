@@ -8,7 +8,7 @@ export const makeMockRequest = ({
 }: {
   params?: Params;
   query?: Params;
-  body?: any;
+  body?: object;
 }): Request => {
   const request = {
     params: params || {},

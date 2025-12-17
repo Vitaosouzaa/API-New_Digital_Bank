@@ -15,12 +15,15 @@ describe("UserRepository", () => {
   };
 
   beforeAll(async () => {
-    managerMock = await getMockEntityManager({});
+    managerMock = await getMockEntityManager({
+      saveReturn: mockUser,
+    });
     userRepository = new UserRepository(managerMock as EntityManager);
   });
 
   it("deve cadastrar um novo usuário no banco de dados", async () => {
-    await userRepository.createUser(mockUser);
+    const response = await userRepository.createUser(mockUser);
     expect(managerMock.save).toHaveBeenCalled();
+    expect(response).toMatchObject(mockUser);
   });
 });

@@ -768,28 +768,6 @@ Desenvolvido com ❤️ por Vitor
 
 Para dúvidas ou problemas, abra uma issue no repositório.
 
----
-
-## 🎯 Roadmap
-
-### Features Futuras
-
-- [ ] Implementar hash de senhas com bcrypt
-- [ ] Adicionar refresh tokens
-- [ ] Implementar roles e permissões
-- [ ] Adicionar paginação nos endpoints
-- [ ] Implementar filtros e busca
-- [ ] Adicionar upload de avatar
-- [ ] Implementar reset de senha
-- [ ] Adicionar logging (Winston ou Pino)
-- [ ] Implementar rate limiting
-- [ ] Adicionar documentação Swagger/OpenAPI
-- [ ] Migrar para PostgreSQL ou MongoDB
-- [ ] Implementar cache (Redis)
-- [ ] Adicionar CI/CD
-- [ ] Docker e Docker Compose
-- [ ] Testes de integração
-- [ ] Testes E2E
 
 ---
 

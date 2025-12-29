@@ -2,6 +2,7 @@ import "reflect-metadata";
 import express, { Request, Response } from "express";
 import { router } from "./routes";
 import { AppDataSource } from "./database";
+import cors from "cors";
 
 const server = express();
 
@@ -14,6 +15,7 @@ AppDataSource.initialize()
   });
 
 server.use(express.json());
+server.use(cors());
 server.use(router);
 
 server.get("/", (req: Request, res: Response) => {

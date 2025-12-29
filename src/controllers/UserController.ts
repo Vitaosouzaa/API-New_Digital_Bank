@@ -17,13 +17,24 @@ export class UserController {
         .json({ message: "Bad Request: Todos os campos são Obrigatórios" });
     }
 
-    const response = await this.userService.createUser(user.name, user.email, user.password);
+    const response = await this.userService.createUser(
+      user.name,
+      user.email,
+      user.password
+    );
     const statusCode = response.statusCode || 201;
     return res.status(statusCode).json(response.body);
   };
 
-  getUsers = (req: Request, res: Response) => {
-    return res.status(200);
+  getUser = async (req: Request, res: Response) => {
+    const { userId } = req.params;
+
+    const user = await this.userService.getUser(userId as string);
+    return res.status(200).json({
+      userId: user?.user_id,
+      name: user?.name,
+      email: user?.email,
+    });
   };
 
   deleteUser = async (req: Request, res: Response): Promise<Response> => {

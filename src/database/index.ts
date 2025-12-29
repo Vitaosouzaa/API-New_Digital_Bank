@@ -7,5 +7,3 @@ export const AppDataSource = new DataSource({
   entities: [User],
   migrations: ["./src/database/migrations/*.ts"],
 });
-
-// Inicialização realizada uma única vez em src/index.ts

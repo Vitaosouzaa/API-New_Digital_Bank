@@ -1,21 +1,22 @@
 import { Request, Response } from "express";
-import { sign } from "jsonwebtoken";
+import { UserService } from "../services/UserService";
 
 export class LoginController {
+  userService: UserService;
+
+  constructor(userService = new UserService()) {
+    this.userService = userService;
+  }
+
   login = async (req: Request, res: Response) => {
-    const tokenData = {
-      name: user.name,
-      email: user.email,
-    };
+    const { email, password } = req.body;
 
-    const tokenKey = "12345";
+    try {
+      const token = await this.userService.getToken(email, password);
 
-    const tokenOptions = {
-      subject: user.user_id,
-    };
-
-    const token = sign(tokenData, tokenKey, tokenOptions);
-
-    return res.status(200).json({ token });
+      return res.status(200).json({ token });
+    } catch (error) {
+      return res.status(500).json({ message: "Error !Credentials invalid!!" });
+    }
   };
 }

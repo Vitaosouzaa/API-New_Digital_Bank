@@ -8,10 +8,11 @@ const mockUserService = {
     statusCode: 201,
     body: { message: "User created successfully" },
   }),
-  // getUsers: jest.fn(),
-  deleteUser: jest
-    .fn()
-    .mockResolvedValue({ statusCode: 200, body: { message: "User deleted successfully" } }),
+  getUser: jest.fn(),
+  deleteUser: jest.fn().mockResolvedValue({
+    statusCode: 200,
+    body: { message: "User deleted successfully" },
+  }),
 };
 
 jest.mock("../services/UserService", () => {
@@ -84,12 +85,6 @@ describe("UserController", () => {
     });
   });
 
-  // it("Deve retornar a lista de usuários", () => {
-  //   const mockRequest = makeMockRequest({});
-  //   userController.getUsers(mockRequest, mockResponse);
-  //   expect(mockResponse.state.status).toBe(200);
-  // });
-
   it("Deve retornar uma mensagem de usuário deletado", async () => {
     const mockRequest = {
       body: {
@@ -123,5 +118,16 @@ describe("UserController", () => {
     expect(mockResponse.state.json).toMatchObject({
       message: "user_id é obrigatório",
     });
+  });
+
+  it("Deve retornar o usuário com o userID fornecido", async () => {
+    const mockRequest = makeMockRequest({
+      params: { userId: "123" },
+    });
+    const mockResponse = makeMockResponse();
+
+    await userController.getUser(mockRequest, mockResponse);
+    expect(mockUserService.getUser).toHaveBeenCalledWith("123");
+    expect(mockResponse.state.status).toBe(200);
   });
 });

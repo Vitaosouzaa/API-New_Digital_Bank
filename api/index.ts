@@ -1,4 +1,12 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
+import express from "express";
+
+// Crie uma instância mínima do Express apenas para Vercel
+const app = express();
+app.use(express.json());
+
+// Import routes
+import "../src/routes";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
@@ -45,25 +53,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Dynamically import and use the Express app
-    const { default: app } = await import("../src");
+    // Roteie manualmente para as rotas da sua API
+    const { UserController } = await import(
+      "../src/controllers/UserController"
+    );
+    const userController = new UserController();
 
-    // Use express app as middleware
-    return new Promise((resolve, reject) => {
-      (app as any).handle(req, res, (err: any) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(undefined);
-        }
-      });
-    });
+    if (req.url?.startsWith("/user") || req.url?.startsWith("/api/user")) {
+      switch (req.method) {
+        case "POST":
+          return userController.createUser(req as any, res as any);
+        case "GET":
+          return userController.getUser(req as any, res as any);
+        case "DELETE":
+          return userController.deleteUser(req as any, res as any);
+        default:
+          return res.status(405).json({ message: "Method not allowed" });
+      }
+    }
+
+    return res.status(404).json({ message: "Route not found" });
   } catch (error: any) {
     console.error("Handler error:", error);
     return res.status(500).json({
       message: "Internal server error",
       error: error.message,
-      stack: error.stack,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 }

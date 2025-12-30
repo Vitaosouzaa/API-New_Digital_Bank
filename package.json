@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "rimraf ./build && tsc",
+    "build": "tsc",
+    "vercel-build": "echo 'Building for Vercel...' && tsc",
     "start": "node build/index.js",
     "start:watch": "tsx watch --env-file=.env src/index.ts",
     "dev": "ts-node-dev src/index.ts",

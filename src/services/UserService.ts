@@ -1,4 +1,4 @@
-import { sign } from "jsonwebtoken";
+import { sign, SignOptions } from "jsonwebtoken";
 import { AppDataSource } from "../database";
 import { User } from "../entities/User";
 import { UserRepository } from "../repositories/user-repositories";
@@ -50,10 +50,12 @@ export class UserService {
       email: user?.email,
     };
 
-    const tokenKey = "123456789";
+    // Usar variável de ambiente para JWT secret
+    const tokenKey = process.env.JWT_SECRET || "123456789";
 
-    const tokenOptions = {
+    const tokenOptions: SignOptions = {
       subject: user?.user_id,
+      expiresIn: "7d", // Token expira em 7 dias
     };
 
     const token = sign(tokenData, tokenKey, tokenOptions);

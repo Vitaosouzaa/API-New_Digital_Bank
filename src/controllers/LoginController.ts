@@ -9,14 +9,29 @@ export class LoginController {
   }
 
   login = async (req: Request, res: Response) => {
-    const { email, password } = req.body;
-
     try {
-      const token = await this.userService.getToken(email, password);
+      const { email, password } = req.body;
+
+      // Validações
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email e senha são obrigatórios" });
+      }
+
+      const token = await this.userService.getToken(
+        email.trim().toLowerCase(), 
+        password
+      );
 
       return res.status(200).json({ token });
-    } catch (error) {
-      return res.status(500).json({ message: "Error !Credentials invalid!!" });
+    } catch (error: any) {
+      console.error('Login error:', error);
+      
+      // Retornar 401 (Unauthorized) para credenciais inválidas, não 500
+      if (error.message === "Invalid credentials") {
+        return res.status(401).json({ message: "Email ou senha incorretos" });
+      }
+      
+      return res.status(500).json({ message: "Erro ao fazer login" });
     }
   };
 }

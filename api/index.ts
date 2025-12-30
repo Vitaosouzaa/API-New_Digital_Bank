@@ -24,6 +24,34 @@ app.get("/", (req: Request, res: Response) => {
   });
 });
 
+// Debug route para diagnóstico
+app.get("/debug", async (req: Request, res: Response) => {
+  try {
+    const hasDbUrl = !!process.env.DATABASE_URL;
+    const dbUrlLength = process.env.DATABASE_URL?.length || 0;
+    
+    return res.status(200).json({
+      message: "Debug info",
+      environment: process.env.NODE_ENV,
+      database: {
+        isInitialized: AppDataSource.isInitialized,
+        hasUrl: hasDbUrl,
+        urlLength: dbUrlLength,
+        type: AppDataSource.options.type,
+      },
+      env: {
+        hasJwtSecret: !!process.env.JWT_SECRET,
+        hasFrontendUrl: !!process.env.FRONTEND_URL,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: "Debug failed",
+      details: String(error),
+    });
+  }
+});
+
 // Adicionar rotas
 app.use(router);
 
@@ -61,11 +89,16 @@ export default async (req: Request, res: Response) => {
   try {
     await initializeDatabase();
     return app(req, res);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Handler error:", error);
     return res.status(500).json({
       message: "Internal server error",
-      error: process.env.NODE_ENV === "development" ? String(error) : undefined,
+      error: String(error),
+      details: {
+        name: error?.name,
+        message: error?.message,
+        code: error?.code,
+      },
     });
   }
 };

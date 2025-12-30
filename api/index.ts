@@ -1,102 +1,59 @@
-import "reflect-metadata";
-import express, { Request, Response, NextFunction } from "express";
-import cors from "cors";
+import { VercelRequest, VercelResponse } from "@vercel/node";
 
-const app = express();
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Set CORS headers
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET,OPTIONS,PATCH,DELETE,POST,PUT"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
+  );
 
-// Configuração CORS completa
-const corsOptions = {
-  origin: true,
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  optionsSuccessStatus: 200,
-};
-
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
-app.use(express.json());
-
-// Health check route
-app.get("/", (req: Request, res: Response) => {
-  return res.status(200).json({
-    message: "API is running!",
-    timestamp: new Date().toISOString(),
-  });
-});
-
-// Debug route
-app.get("/api/debug", (req: Request, res: Response) => {
-  return res.status(200).json({
-    message: "Debug endpoint",
-    env: {
-      hasDbUrl: !!process.env.DATABASE_URL,
-      hasJwtSecret: !!process.env.JWT_SECRET,
-      nodeEnv: process.env.NODE_ENV,
-    },
-  });
-});
-
-// Importar e adicionar rotas com tratamento de erro
-let router: any;
-let AppDataSource: any;
-let dbInitialized = false;
-
-const initializeApp = async () => {
-  if (dbInitialized) return;
+  // Handle preflight request
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
 
   try {
-    // Importar módulos dinamicamente
-    const routesModule = await import("../src/routes");
-    const databaseModule = await import("../src/database");
-
-    router = routesModule.router;
-    AppDataSource = databaseModule.AppDataSource;
-
-    // Inicializar banco de dados
-    if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
-      console.log("✅ Database initialized");
+    // Health check
+    if (req.url === "/" || req.url === "/api") {
+      return res.status(200).json({
+        message: "API is running!",
+        timestamp: new Date().toISOString(),
+        method: req.method,
+        url: req.url,
+      });
     }
 
-    // Adicionar rotas
-    app.use(router);
+    // Debug endpoint
+    if (req.url === "/api/debug" || req.url === "/debug") {
+      return res.status(200).json({
+        message: "Debug info",
+        env: {
+          hasDbUrl: !!process.env.DATABASE_URL,
+          hasJwtSecret: !!process.env.JWT_SECRET,
+          nodeEnv: process.env.NODE_ENV || "production",
+        },
+        request: {
+          method: req.method,
+          url: req.url,
+        },
+      });
+    }
 
-    dbInitialized = true;
-  } catch (error: any) {
-    console.error("❌ Initialization error:", error);
-    throw error;
-  }
-};
-
-// Middleware de erro global
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error("❌ Error:", err);
-  return res.status(err.statusCode || 500).json({
-    message: err.message || "Internal server error",
-    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
-  });
-});
-
-// Rota 404
-app.use((req: Request, res: Response) => {
-  return res.status(404).json({
-    message: "Route not found",
-    path: req.path,
-  });
-});
-
-// Exportar handler para Vercel
-export default async (req: Request, res: Response) => {
-  try {
-    await initializeApp();
+    // Import and initialize app
+    const { default: app } = await import("./server");
     return app(req, res);
   } catch (error: any) {
     console.error("Handler error:", error);
     return res.status(500).json({
-      message: "Server initialization failed",
+      message: "Internal server error",
       error: error.message,
-      details: error.stack,
+      stack: error.stack,
     });
   }
-};
+}

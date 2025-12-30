@@ -49,7 +49,7 @@ const initializeApp = async () => {
     // Importar módulos dinamicamente
     const routesModule = await import("../src/routes");
     const databaseModule = await import("../src/database");
-    
+
     router = routesModule.router;
     AppDataSource = databaseModule.AppDataSource;
 
@@ -61,7 +61,7 @@ const initializeApp = async () => {
 
     // Adicionar rotas
     app.use(router);
-    
+
     dbInitialized = true;
   } catch (error: any) {
     console.error("❌ Initialization error:", error);
@@ -80,9 +80,9 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 
 // Rota 404
 app.use((req: Request, res: Response) => {
-  return res.status(404).json({ 
+  return res.status(404).json({
     message: "Route not found",
-    path: req.path 
+    path: req.path,
   });
 });
 

@@ -45,9 +45,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Import and initialize app
-    const { default: app } = await import("./server");
-    return app(req, res);
+    // Dynamically import and use the Express app
+    const { default: app } = await import("../src");
+
+    // Use express app as middleware
+    return new Promise((resolve, reject) => {
+      (app as any).handle(req, res, (err: any) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(undefined);
+        }
+      });
+    });
   } catch (error: any) {
     console.error("Handler error:", error);
     return res.status(500).json({

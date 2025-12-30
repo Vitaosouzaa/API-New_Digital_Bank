@@ -6,14 +6,21 @@ import cors from "cors";
 
 const app = express();
 
-// Middleware
-app.use(express.json());
+// Configuração CORS completa
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "*",
+    origin: true, // Aceita qualquer origem em desenvolvimento
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// Handler para requisições OPTIONS (preflight)
+app.options("*", cors());
+
+// Middleware
+app.use(express.json());
 
 // Health check route
 app.get("/", (req: Request, res: Response) => {

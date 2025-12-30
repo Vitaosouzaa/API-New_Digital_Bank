@@ -1,12 +1,4 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
-import express from "express";
-
-// Crie uma instância mínima do Express apenas para Vercel
-const app = express();
-app.use(express.json());
-
-// Import routes
-import "../src/routes";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
@@ -32,8 +24,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({
         message: "API is running!",
         timestamp: new Date().toISOString(),
-        method: req.method,
-        url: req.url,
       });
     }
 
@@ -46,20 +36,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           hasJwtSecret: !!process.env.JWT_SECRET,
           nodeEnv: process.env.NODE_ENV || "production",
         },
-        request: {
-          method: req.method,
-          url: req.url,
-        },
       });
     }
 
-    // Roteie manualmente para as rotas da sua API
-    const { UserController } = await import(
-      "../src/controllers/UserController"
-    );
-    const userController = new UserController();
-
+    // User routes
     if (req.url?.startsWith("/user") || req.url?.startsWith("/api/user")) {
+      const { UserController } = await import("../src/controllers/UserController");
+      const userController = new UserController();
+
       switch (req.method) {
         case "POST":
           return userController.createUser(req as any, res as any);
@@ -78,7 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({
       message: "Internal server error",
       error: error.message,
-      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      stack: error.stack,
     });
   }
 }

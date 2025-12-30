@@ -1,111 +1,102 @@
 import "reflect-metadata";
 import express, { Request, Response, NextFunction } from "express";
-import { router } from "../src/routes";
-import { AppDataSource } from "../src/database";
 import cors from "cors";
 
 const app = express();
 
 // Configuração CORS completa
-app.use(
-  cors({
-    origin: true, // Aceita qualquer origem em desenvolvimento
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+const corsOptions = {
+  origin: true,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 200,
+};
 
-// Handler para requisições OPTIONS (preflight)
-app.options("*", cors());
-
-// Middleware
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(express.json());
 
 // Health check route
 app.get("/", (req: Request, res: Response) => {
   return res.status(200).json({
     message: "API is running!",
-    environment: process.env.NODE_ENV || "production",
-    database: AppDataSource.isInitialized ? "connected" : "disconnected",
+    timestamp: new Date().toISOString(),
   });
 });
 
-// Debug route para diagnóstico
-app.get("/debug", async (req: Request, res: Response) => {
-  try {
-    const hasDbUrl = !!process.env.DATABASE_URL;
-    const dbUrlLength = process.env.DATABASE_URL?.length || 0;
-    
-    return res.status(200).json({
-      message: "Debug info",
-      environment: process.env.NODE_ENV,
-      database: {
-        isInitialized: AppDataSource.isInitialized,
-        hasUrl: hasDbUrl,
-        urlLength: dbUrlLength,
-        type: AppDataSource.options.type,
-      },
-      env: {
-        hasJwtSecret: !!process.env.JWT_SECRET,
-        hasFrontendUrl: !!process.env.FRONTEND_URL,
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({
-      error: "Debug failed",
-      details: String(error),
-    });
-  }
+// Debug route
+app.get("/api/debug", (req: Request, res: Response) => {
+  return res.status(200).json({
+    message: "Debug endpoint",
+    env: {
+      hasDbUrl: !!process.env.DATABASE_URL,
+      hasJwtSecret: !!process.env.JWT_SECRET,
+      nodeEnv: process.env.NODE_ENV,
+    },
+  });
 });
 
-// Adicionar rotas
-app.use(router);
+// Importar e adicionar rotas com tratamento de erro
+let router: any;
+let AppDataSource: any;
+let dbInitialized = false;
+
+const initializeApp = async () => {
+  if (dbInitialized) return;
+
+  try {
+    // Importar módulos dinamicamente
+    const routesModule = await import("../src/routes");
+    const databaseModule = await import("../src/database");
+    
+    router = routesModule.router;
+    AppDataSource = databaseModule.AppDataSource;
+
+    // Inicializar banco de dados
+    if (!AppDataSource.isInitialized) {
+      await AppDataSource.initialize();
+      console.log("✅ Database initialized");
+    }
+
+    // Adicionar rotas
+    app.use(router);
+    
+    dbInitialized = true;
+  } catch (error: any) {
+    console.error("❌ Initialization error:", error);
+    throw error;
+  }
+};
 
 // Middleware de erro global
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error("❌ Error:", err);
-  res.status(err.statusCode || 500).json({
+  return res.status(err.statusCode || 500).json({
     message: err.message || "Internal server error",
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   });
 });
 
 // Rota 404
 app.use((req: Request, res: Response) => {
-  res.status(404).json({ message: "Route not found" });
+  return res.status(404).json({ 
+    message: "Route not found",
+    path: req.path 
+  });
 });
-
-// Inicializar banco de dados
-let isInitialized = false;
-
-const initializeDatabase = async () => {
-  if (!isInitialized && !AppDataSource.isInitialized) {
-    try {
-      await AppDataSource.initialize();
-      isInitialized = true;
-      console.log("✅ Database initialized");
-    } catch (err) {
-      console.error("❌ Database error:", err);
-      throw err;
-    }
-  }
-};
 
 // Exportar handler para Vercel
 export default async (req: Request, res: Response) => {
   try {
-    await initializeDatabase();
+    await initializeApp();
     return app(req, res);
   } catch (error: any) {
     console.error("Handler error:", error);
     return res.status(500).json({
-      message: "Internal server error",
-      error: String(error),
-      details: {
-        name: error?.name,
-        message: error?.message,
-        code: error?.code,
-      },
+      message: "Server initialization failed",
+      error: error.message,
+      details: error.stack,
     });
   }
 };
